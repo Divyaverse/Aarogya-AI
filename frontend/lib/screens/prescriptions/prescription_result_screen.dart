@@ -3,7 +3,9 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../theme/colors.dart';
 
 class PrescriptionResultScreen extends StatelessWidget {
-  const PrescriptionResultScreen({super.key});
+  final String extractedText;
+
+  const PrescriptionResultScreen({super.key, required this.extractedText});
 
   @override
   Widget build(BuildContext context) {
@@ -42,15 +44,7 @@ class PrescriptionResultScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-
-              const Text('Medicines Prescribed', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-              const SizedBox(height: 12),
-              _buildMedicineCard('Amoxicillin 500mg', '1 pill • Twice a day • After meals'),
-              const SizedBox(height: 12),
-              _buildMedicineCard('Paracetamol 650mg', '1 pill • When needed for fever'),
-              
-              const SizedBox(height: 32),
-              const Text('Doctor Notes', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+              const Text('Extracted Data', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(16),
@@ -59,9 +53,9 @@ class PrescriptionResultScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.border),
                 ),
-                child: const Text(
-                  'Drink plenty of water and rest. Follow up after 5 days if symptoms persist.',
-                  style: TextStyle(color: AppColors.textSecondary, height: 1.5),
+                child: Text(
+                  extractedText.isNotEmpty ? extractedText : 'No readable text was found in the document.',
+                  style: const TextStyle(color: AppColors.textSecondary, height: 1.5, fontSize: 14),
                 ),
               ),
 
@@ -77,37 +71,5 @@ class PrescriptionResultScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMedicineCard(String name, String dosage) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.secondary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(LucideIcons.pill, color: AppColors.primary),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
-                const SizedBox(height: 4),
-                Text(dosage, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 }

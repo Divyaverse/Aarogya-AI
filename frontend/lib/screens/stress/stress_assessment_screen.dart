@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import '../../theme/colors.dart';
 import 'stress_result_screen.dart';
@@ -19,6 +21,73 @@ class _StressAssessmentScreenState extends State<StressAssessmentScreen> {
   double _caffeineIntake = 1;
 
   final List<String> _pressureLevels = ['0 = Minimal', '1 = Manageable', '2 = High'];
+  String _selectedStressLevel = 'Low';
+  final List<String> _stressLevels = ['Low', 'Medium', 'High'];
+
+  bool _isLoading = false;
+
+  Future<void> _analyzeStress() async {
+    setState(() => _isLoading = true);
+    try {
+
+      // ✅ FIX: WorkPressure mapping (only addition)
+      String mappedPressure;
+      if (_selectedPressure.contains('0')) {
+        mappedPressure = 'Low';
+      } else if (_selectedPressure.contains('1')) {
+        mappedPressure = 'Medium';
+      } else {
+        mappedPressure = 'High';
+      }
+
+      final response = await http.post(
+        Uri.parse('https://paradeless-unfrowardly-tracy.ngrok-free.dev/predict'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'SleepHours': _sleepHours,
+          'WorkHours': _workHours,
+          'ScreenTime': _screenTime,
+          'PhysicalActivityMin': _physicalActivity,
+          'MoodScore': _moodScore,
+          'WorkPressure': mappedPressure, // ✅ fixed
+          'CaffeineIntake': _caffeineIntake,
+          'StressLevel': _selectedStressLevel,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final String stressLevel = data['prediction'] ?? 'Medium';
+        final double percentage = (data['percentage'] ?? 50.0).toDouble();
+
+        if (mounted) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => StressResultScreen(
+                stressLevel: stressLevel,
+                percentage: percentage,
+              ),
+            ),
+          );
+        }
+      } else {
+        _showError('Failed to analyze stress level.');
+      }
+    } catch (e) {
+      _showError('Connection error. Is backend running?');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: AppColors.danger),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,15 +102,15 @@ class _StressAssessmentScreenState extends State<StressAssessmentScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('How are you feeling today?', 
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+              const Text('How are you feeling today?',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
               const SizedBox(height: 8),
               const Text('Answer a few questions to help us assess your stress levels.',
-                style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+                  style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
               const SizedBox(height: 32),
 
               _buildSlider(
-                title: 'Hours of Sleep',
+                title: 'SleepHours', // ✅ changed
                 value: _sleepHours,
                 min: 0,
                 max: 12,
@@ -53,7 +122,7 @@ class _StressAssessmentScreenState extends State<StressAssessmentScreen> {
               ),
 
               _buildSlider(
-                title: 'Work Hours',
+                title: 'WorkHours', // ✅ changed
                 value: _workHours,
                 min: 0,
                 max: 16,
@@ -65,7 +134,7 @@ class _StressAssessmentScreenState extends State<StressAssessmentScreen> {
               ),
 
               _buildSlider(
-                title: 'Screen Time',
+                title: 'ScreenTime', // ✅ changed
                 value: _screenTime,
                 min: 0,
                 max: 12,
@@ -77,7 +146,7 @@ class _StressAssessmentScreenState extends State<StressAssessmentScreen> {
               ),
 
               _buildSlider(
-                title: 'Physical Activity',
+                title: 'PhysicalActivityMin', // ✅ changed
                 value: _physicalActivity,
                 min: 0,
                 max: 120,
@@ -89,7 +158,7 @@ class _StressAssessmentScreenState extends State<StressAssessmentScreen> {
               ),
 
               _buildSlider(
-                title: 'Mood Score (1-10)',
+                title: 'MoodScore', // ✅ changed
                 value: _moodScore,
                 min: 1,
                 max: 10,
@@ -100,8 +169,18 @@ class _StressAssessmentScreenState extends State<StressAssessmentScreen> {
                 onChanged: (val) => setState(() => _moodScore = val),
               ),
 
+              const Text('WorkPressure', // ✅ changed
+                  style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+              const SizedBox(height: 12),
+              _buildDropdown(
+                value: _selectedPressure,
+                items: _pressureLevels,
+                onChanged: (val) => setState(() => _selectedPressure = val!),
+              ),
+              const SizedBox(height: 32),
+
               _buildSlider(
-                title: 'Caffeine Intake',
+                title: 'CaffeineIntake', // ✅ changed
                 value: _caffeineIntake,
                 min: 0,
                 max: 6,
@@ -111,23 +190,23 @@ class _StressAssessmentScreenState extends State<StressAssessmentScreen> {
                 valueLabel: '${_caffeineIntake.toInt()} cups',
                 onChanged: (val) => setState(() => _caffeineIntake = val),
               ),
+              const SizedBox(height: 16),
 
-              const Text('Work / Academic Pressure', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+              const Text('StressLevel', // ✅ changed
+                  style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
               const SizedBox(height: 12),
               _buildDropdown(
-                value: _selectedPressure,
-                items: _pressureLevels,
-                onChanged: (val) => setState(() => _selectedPressure = val!),
+                value: _selectedStressLevel,
+                items: _stressLevels,
+                onChanged: (val) => setState(() => _selectedStressLevel = val!),
               ),
               const SizedBox(height: 48),
 
               ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const StressResultScreen()),
-                  );
-                },
-                child: const Text('Analyze Stress Level'),
+                onPressed: _isLoading ? null : _analyzeStress,
+                child: _isLoading
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('Analyze Stress Level'),
               ),
             ],
           ),
@@ -171,8 +250,8 @@ class _StressAssessmentScreenState extends State<StressAssessmentScreen> {
           ],
         ),
         Center(
-          child: Text(valueLabel, 
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary)),
+          child: Text(valueLabel,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary)),
         ),
         const SizedBox(height: 32),
       ],

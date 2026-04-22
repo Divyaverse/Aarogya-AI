@@ -14,6 +14,7 @@ class UploadPrescriptionScreen extends StatefulWidget {
 class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
   String _selectedSpecialty = 'Dermatologist';
   String? _uploadedFileName;
+  PlatformFile? _selectedFile;
 
   Future<void> _pickFile() async {
     try {
@@ -22,6 +23,7 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
       );
       if (result != null) {
         setState(() {
+          _selectedFile = result.files.single;
           _uploadedFileName = result.files.single.name;
         });
       }
@@ -142,12 +144,12 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
 
               ElevatedButton(
                 onPressed: () {
-                  if (_uploadedFileName == null) {
+                  if (_uploadedFileName == null || _selectedFile == null) {
                     _showOverlayMessage('Please upload a valid document', isError: true);
                     return;
                   }
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const AnalysisLoadingScreen()),
+                    MaterialPageRoute(builder: (_) => AnalysisLoadingScreen(file: _selectedFile!)),
                   );
                 },
                 child: const Text('Analyze Prescription'),

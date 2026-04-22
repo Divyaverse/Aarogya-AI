@@ -13,6 +13,7 @@ dependencies:
     sdk: flutter
   google_fonts: ^8.0.0 # For modern typography
   lucide_icons: ^0.257.0 # Clean, modern icons
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_test:

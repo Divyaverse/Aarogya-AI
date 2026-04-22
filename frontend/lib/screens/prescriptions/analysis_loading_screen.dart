@@ -1,9 +1,14 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../../theme/colors.dart';
 import 'prescription_result_screen.dart';
 
 class AnalysisLoadingScreen extends StatefulWidget {
-  const AnalysisLoadingScreen({super.key});
+  final PlatformFile file;
+
+  const AnalysisLoadingScreen({super.key, required this.file});
 
   @override
   State<AnalysisLoadingScreen> createState() => _AnalysisLoadingScreenState();
@@ -11,6 +16,8 @@ class AnalysisLoadingScreen extends StatefulWidget {
 
 class _AnalysisLoadingScreenState extends State<AnalysisLoadingScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
+
+  String _errorText = '';
 
   @override
   void initState() {
@@ -20,13 +27,50 @@ class _AnalysisLoadingScreenState extends State<AnalysisLoadingScreen> with Sing
       duration: const Duration(seconds: 2),
     )..repeat();
 
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const PrescriptionResultScreen()),
-        );
+    _uploadFile();
+  }
+
+  Future<void> _uploadFile() async {
+    try {
+      var request = http.MultipartRequest('POST', Uri.parse('https://paradeless-unfrowardly-tracy.ngrok-free.dev/upload'));
+      
+      if (widget.file.bytes != null) {
+        request.files.add(http.MultipartFile.fromBytes('file', widget.file.bytes!, filename: widget.file.name));
+      } else if (widget.file.path != null) {
+        request.files.add(await http.MultipartFile.fromPath('file', widget.file.path!));
       }
-    });
+
+      var streamResponse = await request.send();
+      var response = await http.Response.fromStream(streamResponse);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final String extractedText = data['extracted_text'] ?? '';
+        
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => PrescriptionResultScreen(extractedText: extractedText)),
+          );
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            try {
+               final data = jsonDecode(response.body);
+               _errorText = data['error'] ?? 'Error analyzing prescription.';
+            } catch(e) {
+               _errorText = 'Error: ${response.statusCode} - ${response.body}';
+            }
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorText = 'Connection failed. Ensure app.py is running.';
+        });
+      }
+    }
   }
 
   @override
@@ -64,12 +108,13 @@ class _AnalysisLoadingScreenState extends State<AnalysisLoadingScreen> with Sing
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Extracting medicines and doctor notes with AI',
+            Text(
+              _errorText.isNotEmpty ? _errorText : 'Extracting medicines and doctor notes with AI',
               style: TextStyle(
-                color: Colors.white70,
+                color: _errorText.isNotEmpty ? Colors.redAccent : Colors.white70,
                 fontSize: 14,
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),

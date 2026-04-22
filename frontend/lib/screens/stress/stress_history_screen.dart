@@ -3,7 +3,9 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../theme/colors.dart';
 
 class StressHistoryScreen extends StatelessWidget {
-  const StressHistoryScreen({super.key});
+  final List<Map<String, dynamic>> historyData;
+
+  const StressHistoryScreen({super.key, required this.historyData});
 
   @override
   Widget build(BuildContext context) {
@@ -18,9 +20,21 @@ class StressHistoryScreen extends StatelessWidget {
       body: SafeArea(
         child: ListView.builder(
           padding: const EdgeInsets.all(20),
-          itemCount: 5,
+          itemCount: historyData.length, // ✅ dynamic
           itemBuilder: (context, index) {
-            bool isLow = index % 2 == 0;
+
+            final item = historyData[index];
+
+            final String stressLevel = item['stressLevel'];
+            final double percentage = item['percentage'];
+
+            bool isLow = stressLevel == 'Low';
+            bool isMedium = stressLevel == 'Medium';
+
+            Color color = isLow
+                ? AppColors.success
+                : (isMedium ? AppColors.warning : AppColors.danger);
+
             return Container(
               margin: const EdgeInsets.only(bottom: 16),
               padding: const EdgeInsets.all(16),
@@ -36,38 +50,49 @@ class StressHistoryScreen extends StatelessWidget {
                     height: 48,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: isLow ? AppColors.success : AppColors.warning, width: 3),
+                      border: Border.all(color: color, width: 3),
                     ),
                     child: Center(
                       child: Text(
-                        isLow ? '35%' : '65%',
+                        '${percentage.toInt()}%',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: isLow ? AppColors.success : AppColors.warning,
+                          color: color,
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 16),
+
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isLow ? 'Low Stress' : 'Moderate Stress',
+                          '$stressLevel Stress', // ✅ dynamic
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: isLow ? AppColors.success : AppColors.warning,
+                            color: color,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text('Oct ${15 - index}, 2023 • 09:00 AM', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+
+                        // optional date (if available)
+                        Text(
+                          item['date'] ?? 'No date',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  const Icon(LucideIcons.chevronRight, color: AppColors.border, size: 20),
+
+                  const Icon(LucideIcons.chevronRight,
+                      color: AppColors.border, size: 20),
                 ],
               ),
             );
