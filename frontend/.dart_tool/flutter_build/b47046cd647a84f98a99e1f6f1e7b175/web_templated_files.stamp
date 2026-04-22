@@ -1,0 +1,1 @@
+{"inputs":["C:\\Arogya AI\\web\\*\\index.html","C:\\Arogya AI\\web\\flutter_bootstrap.js","C:\\src\\flutter\\bin\\internal\\engine.version"],"outputs":["C:\\Arogya AI\\build\\web\\*\\index.html","C:\\Arogya AI\\build\\web\\flutter_bootstrap.js"],"buildKey":"[{\"compileTarget\":\"dart2js\",\"renderer\":\"canvaskit\",\"mainJsPath\":\"main.dart.js\"}]"}
